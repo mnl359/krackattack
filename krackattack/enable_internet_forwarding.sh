@@ -2,13 +2,13 @@
 set -e
 
 # Interfaces that are used
-INTERNET=wlp2s0
+INTERNET=eth0
 #INTERNET=wlp5s0
-REPEATER=wlx8416f9109553
+REPEATER=wlan1
 
 echo ""
 echo "[ ] Configuring IP address of malicious AP"
-ip addr del 192.168.100.1/24 dev wlx8416f9109553 2> /dev/null || true
+ip addr del 192.168.100.1/24 dev wlan1 2> /dev/null || true
 ip addr add 192.168.100.1/24 dev $REPEATER
 
 echo "[ ] Enabling IP forwaring"
