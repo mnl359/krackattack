@@ -3,7 +3,7 @@ set -e
 
 # Interfaces that are used
 INTERNET=eth0
-#INTERNET=wlp5s0
+#INTERNET=eth0
 REPEATER=wlan1
 
 echo ""
